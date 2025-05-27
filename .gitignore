@@ -323,3 +323,6 @@ pyrightconfig.json
 
 # Directory containing miscellaneous files to ignore.
 ignored
+
+# Secret packer variable files.
+*secrets*.pkrvars.hcl
