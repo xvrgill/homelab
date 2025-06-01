@@ -6,6 +6,24 @@ variable "digital_ocean_api_key" {
   description = "Digital ocean API key used to provision image"
 }
 
+variable "vps_private_key" {
+  type        = string
+  sensitive   = true
+  description = "The private key to use for the wireguard interface on the VPS"
+}
+
+variable "client_public_key" {
+  type        = string
+  sensitive   = true
+  description = "The public key of the client to use in the wireguard peer configuration"
+}
+
+variable "public_ip_endpoint" {
+  type        = string
+  sensitive   = true
+  description = "The endpoint to use that is or points to your public IP. Ex: my-ip.duckdns.org"
+}
+
 packer {
   required_plugins {
     digitalocean = {
@@ -33,23 +51,27 @@ build {
       "DEBIAN_FRONTEND=noninteractive",
     ]
     inline = [
+      "echo 'Sleeping to allow full system boot...'",
       "sleep 80",
-      "echo Updating apt repositories...",
+
+      "echo 'Updating apt repositories...'",
       "apt-get update",
-      "echo Apt packages updated",
-      "sleep 10",
-      "echo Installing dependencies...",
-      "apt-get install -y wireguard wireguard-tools nginx iptables-persistent",
-      "echo Wireguard installed successfully",
-      "sleep 10",
-      "echo Restarting packagekit.service",
+      "echo 'Apt packages updated'",
+
+      "echo 'Installing dependencies...'",
+      # Need resolvconf for wireguard DNS
+      "apt-get install -y wireguard wireguard-tools nginx iptables-persistent resolvconf",
+      # Optional recommended extras
+      "apt-get install -y libgd-tools fcgiwrap nginx-doc ssl-cert",
+      "echo 'Dependencies installed successfully'",
+
+      "echo 'Restarting packagekit.service'",
       "systemctl restart packagekit.service",
-      "echo packagekit.service restarted",
-      "sleep 10",
-      "echo Restarting unattended-upgrades.service...",
+      "echo 'packagekit.service restarted'",
+
+      "echo 'Restarting unattended-upgrades.service...'",
       "systemctl restart unattended-upgrades.service",
-      "echo unattended-upgrades.service restarted",
-      "sleep 5",
+      "echo 'unattended-upgrades.service restarted'",
     ]
   }
 
@@ -64,7 +86,43 @@ build {
       "mkdir -p /etc/wireguard",
       "chmod 700 /etc/wireguard",
       "echo Wireguard directory created: /etc/wireguard",
-      "sleep 5",
+    ]
+  }
+
+  # Generate wireguard
+  provisioner "shell" {
+    environment_vars = [
+      "VPS_PRIVATE_KEY=${var.vps_private_key}",
+      "CLIENT_PUBLIC_KEY=${var.client_public_key}",
+      "PUBLIC_IP_ENDPOINT=${var.public_ip_endpoint}",
+    ]
+    script = "./scripts/packer/create_wireguard_server_conf.sh"
+  }
+
+  # Configure firewall rules
+  provisioner "shell" {
+    script = "./scripts/packer/configure_firewall_rules.sh"
+  }
+
+  # Configure NGINX reverse proxy to forward traffic via wireguard.
+  provisioner "shell" {
+    script = "./scripts/packer/configure_nginx_reverse_proxy.sh"
+  }
+
+  # Enable and start services
+  provisioner "shell" {
+    inline = [
+      "echo 'Enabling services...'",
+      "systemctl enable wg-quick@wg0",
+      "systemctl enable nginx",
+      "echo 'Services enabled'",
+
+      "echo 'Restarting services...'",
+      "systemctl restart packagekit.service",
+      "systemctl restart unattended-upgrades.service",
+      "echo 'Services restarted'",
+
+      "echo 'Setup complete!'",
     ]
   }
 }
