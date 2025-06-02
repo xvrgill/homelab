@@ -326,3 +326,13 @@ ignored
 
 # Secret packer variable files.
 *secrets*.pkrvars.hcl
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Secrets
+secrets.auto.tfvars
+*.auto.tfvars

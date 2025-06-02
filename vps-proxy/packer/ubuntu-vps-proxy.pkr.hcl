@@ -24,6 +24,17 @@ variable "public_ip_endpoint" {
   description = "The endpoint to use that is or points to your public IP. Ex: my-ip.duckdns.org"
 }
 
+variable "snapshot_prefix" {
+  type        = string
+  default     = "vps-proxy"
+  description = "The prefix to prepend for the snapshot name"
+}
+
+locals {
+  snapshot_prefix = "vps-proxy"
+  timestamp       = formatdate("MM-DD-YYYY_hh-mm-ss", timestamp())
+}
+
 packer {
   required_plugins {
     digitalocean = {
@@ -34,11 +45,12 @@ packer {
 }
 
 source "digitalocean" "vps-proxy" {
-  api_token    = var.digital_ocean_api_key
-  image        = "ubuntu-22-04-x64"
-  region       = "nyc1"
-  size         = "s-1vcpu-512mb-10gb"
-  ssh_username = "root"
+  api_token     = var.digital_ocean_api_key
+  image         = "ubuntu-22-04-x64"
+  region        = "nyc1"
+  size          = "s-1vcpu-512mb-10gb"
+  snapshot_name = "${local.snapshot_prefix}-${local.timestamp}"
+  ssh_username  = "root"
 }
 
 build {
@@ -76,7 +88,7 @@ build {
   }
 
   provisioner "shell" {
-    script = "./scripts/packer/enable_ip_forwarding.sh"
+    script = "./scripts/enable_ip_forwarding.sh"
   }
 
   # Create wireguard directory to store configuration
@@ -89,24 +101,24 @@ build {
     ]
   }
 
-  # Generate wireguard
-  provisioner "shell" {
-    environment_vars = [
-      "VPS_PRIVATE_KEY=${var.vps_private_key}",
-      "CLIENT_PUBLIC_KEY=${var.client_public_key}",
-      "PUBLIC_IP_ENDPOINT=${var.public_ip_endpoint}",
-    ]
-    script = "./scripts/packer/create_wireguard_server_conf.sh"
+  # Generate wireguard configuration
+  provisioner "file" {
+    content = templatefile("${path.root}/files/wg0.conf.tpl", {
+      vps_private_key    = var.vps_private_key,
+      client_public_key  = var.client_public_key,
+      public_ip_endpoint = var.public_ip_endpoint,
+    })
+    destination = "/etc/wireguard/wg0.conf"
   }
 
   # Configure firewall rules
   provisioner "shell" {
-    script = "./scripts/packer/configure_firewall_rules.sh"
+    script = "./scripts/configure_firewall_rules.sh"
   }
 
   # Configure NGINX reverse proxy to forward traffic via wireguard.
   provisioner "shell" {
-    script = "./scripts/packer/configure_nginx_reverse_proxy.sh"
+    script = "./scripts/configure_nginx_reverse_proxy.sh"
   }
 
   # Enable and start services
