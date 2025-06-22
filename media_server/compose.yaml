@@ -224,3 +224,9 @@ services:
     ports:
       - ${TAUTULLI_PORTS}
 
+# TODO: Add external volumes after migrating datasets.
+#volumes:
+#  downloads_nzbget:
+#    external: true
+#  downloads_qbittorrent:
+#    external: true
