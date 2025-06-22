@@ -333,6 +333,10 @@ ignored
 .terraform/
 .terraform.lock.hcl
 
-# Secrets
-secrets.auto.tfvars
-*.auto.tfvars
+# Secret terraform variable files
+*secrets*.tfvars
+
+### Custom ###
+
+# Environment variables - Including portainer stacks
+*.env
