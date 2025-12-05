@@ -3,7 +3,8 @@ networks:
   servarrnetwork:
     ipam:
       config:
-        - subnet: 172.18.0.0/24
+        # This substitution won't work if you're not using portainer.
+        - subnet: ${SERVARR_NETWORK_SUBNET}
 
 services:
 
@@ -200,7 +201,7 @@ services:
     volumes:
       - ${OVERSEER_CONFIG_DIR}:/config
     ports:
-      - ${OVERSEER_PORTS}
+      - {OVERSEER_PORTS}
     restart: unless-stopped
     networks:
       servarrnetwork:
