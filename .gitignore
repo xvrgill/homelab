@@ -323,3 +323,20 @@ pyrightconfig.json
 
 # Directory containing miscellaneous files to ignore.
 ignored
+
+# Secret packer variable files.
+*secrets*.pkrvars.hcl
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Secret terraform variable files
+*secrets*.tfvars
+
+### Custom ###
+
+# Environment variables - Including portainer stacks
+*.env
