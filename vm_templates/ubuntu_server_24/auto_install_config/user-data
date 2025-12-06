@@ -1,0 +1,35 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US
+  keyboard:
+    layout: us
+  storage:
+    layout:
+      name: direct
+    swap:
+      size: 0
+  ssh:
+    install-server: true
+    allow-pw: true
+    disable_root: true
+    ssh_quiet_keygen: true
+    allow_public_ssh_keys: true
+  packages:
+    - qemu-guest-agent
+    - sudo
+  user-data:
+    package_upgrade: false
+    timezone: America/New_York
+    users:
+      - name: xgill
+        gecos: "Xavier Gill user"
+        groups: [adm, sudo]
+        lock_passwd: false
+        shell: /bin/bash
+        ssh_authorized_keys:
+          - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA0zj2RuAt7cD9Dn72810jHcLksSF2e2Zz8w5EZLLtM5 xaviercgill@gmail.com
+        sudo: ALL=(ALL) NOPASSWD:ALL
+
+
+
