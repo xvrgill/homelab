@@ -340,3 +340,6 @@ ignored
 
 # Environment variables - Including portainer stacks
 *.env
+
+# Proxmox x Packer secret file
+vm_templates/credentials.pkr.hcl
